@@ -1,7 +1,12 @@
 
-# Domoticz-Govee-Plugin
-Govee for Domoticz home automation
-This plugin allows you handle your Govee devices. 
+# Govee Local Api Control plugin for Domoticz
+This plugin allows you to discover Govee devices on your local network and create/update devices in Domoticz.
+
+
+## Compatibility
+
+This plugin requires Govee devices that support local API. A list of compatible devices can be found on Govee's documentation:
+https://app-h5.govee.com/user-manual/wlan-guide
 
 
 ## Installation
@@ -13,7 +18,14 @@ To install:
 * Run: ```git clone https://github.com/galadril/Domoticz-Govee-Plugin.git```
 * Restart Domoticz.
 
-In the web UI, navigate to the Hardware page.  In the hardware dropdown there will be an entry called "Govee".
+
+## Configuration
+
+* Open the Domoticz web interface.
+* Go to Setup > Hardware.
+* Add a new hardware with type Govee Discovery.
+* Set the Scan interval (in seconds) for how often the plugin should scan for Govee devices.
+* Save and close the dialog.
 
 
 ## Updating
@@ -24,11 +36,21 @@ To update:
 * Restart Domoticz.
 
 
+## Usage
+
+The plugin will automatically discover compatible Govee devices on your local network and create/update devices in Domoticz. You can turn on/off the devices and set their brightness level from the Domoticz web interface.
+
+
+## Debugging
+
+You can enable debugging by setting the Debug parameter to a value between 1 and 6 in the Setup > Hardware dialog. More information about the debugging levels can be found in the Domoticz documentation.
+
+
 ## Change log
 
 | Version | Information |
 | ----- | ---------- |
-| 0.0.1 | Work in progress |
+| 0.0.1 | Initial version |
 
 
 # Donation
