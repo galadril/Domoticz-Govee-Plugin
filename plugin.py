@@ -1,10 +1,10 @@
 """
-<plugin key="GoveeLocalApiControl" name="Govee Local Api Control" author="Mark Heinis" version="0.0.1"  wikilink="https://github.com/galadril/Domoticz-Govee-Plugin" externallink="">
+<plugin key="GoveeDiscovery" name="Govee Local Api Control" author="Mark Heinis" version="0.0.1"  wikilink="https://github.com/galadril/Domoticz-Govee-Plugin" externallink="">
     <description>
         Plugin to discover Govee devices on the local network and create/update devices in Domoticz.
     </description>
     <params>
-        <param field="Mode1" label="Scan interval (sec)" width="200px" required="true" default="5" />
+        <param field="Mode1" label="Scan interval (sec)" width="200px" required="true" default="10" />
         <param field="Mode6" label="Debug" width="150px">
             <options>
                 <option label="None" value="0"  default="true" />
@@ -26,7 +26,7 @@ import json
 import time
 import uuid
 
-class GoveeLocalApiControl:
+class GoveeDiscovery:
     def __init__(self):
         self.last_scan_time = 0
         
@@ -53,7 +53,7 @@ class GoveeLocalApiControl:
         
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.settimeout(3)
+            sock.settimeout(5)
             
             if command == 'On':
                 Domoticz.Log('Sending ON command for DeviceID='+Devices[unit].DeviceID)
@@ -106,6 +106,7 @@ class GoveeLocalApiControl:
                 
                 try:
                     strData = data.decode("utf-8", "ignore")
+                    
                     if "scan" in strData:
                         device = self.parse_device(strData)
                         if device is not None:
@@ -147,7 +148,7 @@ class GoveeLocalApiControl:
         Domoticz.Log("Fetching status for device with ID {}".format(device['id']))
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.settimeout(3)
+            sock.settimeout(5)
             message = b'{  \"msg\":{    \"cmd\":\"devStatus\",    \"data\":{      }  }}'
             sock.sendto(message, (device['ip'], 4003))
             data, addr = sock.recvfrom(1024)
@@ -175,7 +176,7 @@ class GoveeLocalApiControl:
         return {'id': self.statusDeviceId, 'status': onOff, 'brightness': brightness, 'color': svalue}
             
 global _plugin
-_plugin = GoveeLocalApiControl()
+_plugin = GoveeDiscovery()
 
 def onStart():
     global _plugin
@@ -208,6 +209,7 @@ def onDisconnect(Connection):
 def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
+
 
 def DumpConfigToLog():
     for x in Parameters:
