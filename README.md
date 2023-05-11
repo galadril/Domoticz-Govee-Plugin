@@ -51,6 +51,7 @@ You can enable debugging by setting the Debug parameter to a value between 1 and
 | Version | Information |
 | ----- | ---------- |
 | 0.0.1 | Initial version |
+| 0.0.2 | Setting the color is now working |
 
 
 # Donation
