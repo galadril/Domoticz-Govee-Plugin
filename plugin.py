@@ -1,10 +1,10 @@
 """
-<plugin key="GoveeDiscovery" name="Govee Discovery" author="Mark Heinis" version="0.0.1"  wikilink="https://github.com/galadril/Domoticz-Govee-Plugin" externallink="">
+<plugin key="GoveeLocalApiControl" name="Govee Local Api Control" author="Mark Heinis" version="0.0.1"  wikilink="https://github.com/galadril/Domoticz-Govee-Plugin" externallink="">
     <description>
         Plugin to discover Govee devices on the local network and create/update devices in Domoticz.
     </description>
     <params>
-        <param field="Mode1" label="Scan interval (sec)" width="200px" required="true" default="10" />
+        <param field="Mode1" label="Scan interval (sec)" width="200px" required="true" default="5" />
         <param field="Mode6" label="Debug" width="150px">
             <options>
                 <option label="None" value="0"  default="true" />
@@ -26,7 +26,7 @@ import json
 import time
 import uuid
 
-class GoveeDiscovery:
+class GoveeLocalApiControl:
     def __init__(self):
         self.last_scan_time = 0
         
@@ -48,14 +48,43 @@ class GoveeDiscovery:
         Domoticz.Log("onMessage called")
 
     def onCommand(self, unit, command, level, hue):
-        Domoticz.Log("onCommand called")
+        Domoticz.Debug("onCommand called for Unit " + str(unit) + ": Parameter '" + str(command) + "', Level: " + str(level))
+        Domoticz.Log('Sending command for DeviceID='+Devices[unit].DeviceID)
+        
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(3)
+            
+            if command == 'On':
+                Domoticz.Log('Sending ON command for DeviceID='+Devices[unit].DeviceID)
+                message = b'{  \"msg\":{    \"cmd\":\"turn\",    \"data\":{      \"value\":1    }  }}'
+                sock.sendto(message, (Devices[unit].DeviceID, 4003))
+                #Devices[unit].Update(nValue=1)
+            elif command == 'Off':
+                Domoticz.Log('Sending Off command for DeviceID='+Devices[unit].DeviceID)
+                message = b'{  \"msg\":{    \"cmd\":\"turn\",    \"data\":{      \"value\":0    }  }}'
+                sock.sendto(message, (Devices[unit].DeviceID, 4003))
+                #Devices[unit].Update(nValue=0)
+            elif command == 'Set Level':
+                messagestr = '{  \"msg\":{    \"cmd\":\"brightness\",    \"data\":{      \"value\":' + str(level) + '    }  }}'
+                message = messagestr.encode('utf-8')
+                if Devices[unit].nValue == 0:
+                    Domoticz.Log('Sending On command for DeviceID='+Devices[unit].DeviceID)
+                    message = b'{  \"msg\":{    \"cmd\":\"turn\",    \"data\":{      \"value\":1    }  }}'
+                else:
+                    Domoticz.Log('Sending Brightness command for DeviceID='+Devices[unit].DeviceID)
+                sock.sendto(message, (Devices[unit].DeviceID, 4003))
+                #Devices[unit].Update(sValue=str(level))
+            
+            sock.close()
+        except Exception as e:
+            Domoticz.Log("Error: '"+str(e)+"'")
 
     def onHeartbeat(self):
         Domoticz.Log("onHeartbeat called")
         self.scan_devices()
 
     def scan_devices(self):
-        Domoticz.Log("Scanning devices...")
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -77,8 +106,7 @@ class GoveeDiscovery:
                 
                 try:
                     strData = data.decode("utf-8", "ignore")
-                    
-                    try:
+                    if "scan" in strData:
                         device = self.parse_device(strData)
                         if device is not None:
                             receivedDevices.append(device)
@@ -90,11 +118,11 @@ class GoveeDiscovery:
                                     existingDevice = dev
                                     
                             if (existingDevice == 0):
-                                Domoticz.Device(Name=device['ip'], Unit=len(Devices)+1, Type=241, Subtype=2, Used=0, DeviceID=device['ip']).Create()
+                                Domoticz.Device(Name=device['ip'], Unit=len(Devices)+1, Type=241, Subtype=2, Switchtype=7, Used=0, DeviceID=device['ip']).Create()
                                 Domoticz.Log("Created device: "+device['id'])
                                 
                             self.get_device_status(device)
-                    except Exception as inst:
+                    elif "devStatus" in strData:
                         status = self.parse_status(strData)
                         status['id'] = ip_address
                         
@@ -103,7 +131,8 @@ class GoveeDiscovery:
                                 Domoticz.Log("Found status: {}".format(status))
                                 for dev in Devices:
                                     if (Devices[dev].DeviceID == status['id']):
-                                        Devices[dev].Update(nValue=status['status'], sValue=status['color'], TimedOut=0)
+                                        if (Devices[dev].nValue != status['status']) or (Devices[dev].sValue != str(status['brightness'])):
+                                            Devices[dev].Update(nValue=status['status'], sValue=str(status['brightness']))
                             except Exception as inst:
                                 Domoticz.Log("Error: '"+str(inst)+"'")
 
@@ -118,7 +147,7 @@ class GoveeDiscovery:
         Domoticz.Log("Fetching status for device with ID {}".format(device['id']))
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.settimeout(30)
+            sock.settimeout(3)
             message = b'{  \"msg\":{    \"cmd\":\"devStatus\",    \"data\":{      }  }}'
             sock.sendto(message, (device['ip'], 4003))
             data, addr = sock.recvfrom(1024)
@@ -146,7 +175,7 @@ class GoveeDiscovery:
         return {'id': self.statusDeviceId, 'status': onOff, 'brightness': brightness, 'color': svalue}
             
 global _plugin
-_plugin = GoveeDiscovery()
+_plugin = GoveeLocalApiControl()
 
 def onStart():
     global _plugin
@@ -179,7 +208,6 @@ def onDisconnect(Connection):
 def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
-
 
 def DumpConfigToLog():
     for x in Parameters:
