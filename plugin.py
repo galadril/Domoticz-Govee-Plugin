@@ -1,5 +1,5 @@
 """
-<plugin key="GoveeDiscovery" name="Govee Local Api Control" author="Mark Heinis" version="0.0.1"  wikilink="https://github.com/galadril/Domoticz-Govee-Plugin" externallink="">
+<plugin key="GoveeDiscovery" name="Govee Local Api Control" author="Mark Heinis" version="0.0.2"  wikilink="https://github.com/galadril/Domoticz-Govee-Plugin" externallink="">
     <description>
         Plugin to discover Govee devices on the local network and create/update devices in Domoticz.
     </description>
@@ -75,7 +75,13 @@ class GoveeDiscovery:
                     Domoticz.Log('Sending Brightness command for DeviceID='+Devices[unit].DeviceID)
                 sock.sendto(message, (Devices[unit].DeviceID, 4003))
                 #Devices[unit].Update(sValue=str(level))
-            
+            elif command == 'Set Color':
+                Domoticz.Log('Sending Color command for DeviceID='+Devices[unit].DeviceID + " with color info: " + str(hue))
+                rgb = json.loads(hue)
+                messagestr = '{  \"msg\":{    \"cmd\":\"colorwc\",    \"data\":{      \"color\":{        \"r\":' +str(rgb.get("r"))+ ',        \"g\":' +str(rgb.get("g"))+ ',        \"b\":' +str(rgb.get("b"))+ '      }  }  }}'
+                message = messagestr.encode('utf-8')
+                sock.sendto(message, (Devices[unit].DeviceID, 4003))
+                
             sock.close()
         except Exception as e:
             Domoticz.Log("Error: '"+str(e)+"'")
