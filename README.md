@@ -31,7 +31,7 @@ To install:
 ## Updating
 
 To update:
-* Go in your Domoticz directory using a command line and open the plugins directory then the Domoticz-Yi-Hack-Plugin directory.
+* Go in your Domoticz directory using a command line and open the plugins directory then the Domoticz-Govee-Plugin directory.
 * Run: ```git pull```
 * Restart Domoticz.
 
