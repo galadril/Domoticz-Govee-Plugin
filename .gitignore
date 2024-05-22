@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vs/Domoticz-Govee-Plugin/FileContentIndex/9779dc65-ed3f-416e-8c61-d95b03c2c0b8.vsidx
+.vs/Domoticz-Govee-Plugin/FileContentIndex/read.lock
+.vs/Domoticz-Govee-Plugin/v17/.wsuo
+.vs/Domoticz-Govee-Plugin/v17/TestStore/0/000.testlog
+.vs/slnx.sqlite
+.vs/VSWorkspaceState.json
